@@ -1,4 +1,5 @@
 {
+  "version": 2,
   "functions": {
     "api/make-video.js": {
       "maxDuration": 60

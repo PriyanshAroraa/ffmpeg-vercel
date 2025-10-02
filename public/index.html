@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>FFmpeg Meme Video API</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 50px auto; padding: 20px; }
+        .endpoint { background: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0; }
+        code { background: #e8e8e8; padding: 2px 5px; border-radius: 3px; }
+    </style>
+</head>
+<body>
+    <h1>🎬 FFmpeg Meme Video API</h1>
+    <p>Serverless API for generating meme videos with FFmpeg, designed for n8n automation workflows.</p>
+    
+    <div class="endpoint">
+        <h3>API Endpoint</h3>
+        <code>POST /api/make-video</code>
+    </div>
+    
+    <div class="endpoint">
+        <h3>Request Body</h3>
+        <pre>{
+  "imageUrl": "https://example.com/meme.jpg",
+  "audioUrl": "https://example.com/music.mp3",
+  "duration": 8,
+  "companyName": "Your Company",
+  "day": 1
+}</pre>
+    </div>
+    
+    <div class="endpoint">
+        <h3>Response</h3>
+        <p>Returns a video file (MP4) with proper headers for download.</p>
+    </div>
+    
+    <p><strong>GitHub:</strong> <a href="https://github.com/PriyanshAroraa/ffmpeg-vercel">PriyanshAroraa/ffmpeg-vercel</a></p>
+</body>
+</html>
