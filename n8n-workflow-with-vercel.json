@@ -1,0 +1,275 @@
+{
+  "name": "Meme Video Automation with Vercel FFmpeg",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "meme-automation",
+        "options": {}
+      },
+      "id": "1",
+      "name": "Form Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "operation": "chat",
+        "model": "gpt-4.1-mini",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a Meme Marketing Assistant for startups. Generate JSON memes with top_text, bottom_text, template, and music_url."
+          },
+          {
+            "role": "user",
+            "content": "Company: {{$json[\"body\"][\"company_name\"]}}, Website: {{$json[\"body\"][\"website\"]}}, Duration: {{$json[\"body\"][\"duration\"]}}"
+          }
+        ]
+      },
+      "id": "2",
+      "name": "Generate Meme Ideas (OpenAI)",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [500, 300],
+      "credentials": {
+        "openAiApi": "OpenAI Account"
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $json.choices?.[0]?.message?.content || $json.data || '';\nconst obj = JSON.parse(raw);\nreturn [{ json: obj }];"
+      },
+      "id": "2.5",
+      "name": "Parse JSON",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "url": "https://meme-generator-and-template-database.p.rapidapi.com/search",
+        "options": {},
+        "qs": {
+          "searchString": "={{$json[\"template\"]}}"
+        }
+      },
+      "id": "3",
+      "name": "Meme Template Search",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [800, 200],
+      "credentials": {
+        "httpHeaderAuth": "RapidAPI Key"
+      }
+    },
+    {
+      "parameters": {
+        "operation": "chat",
+        "model": "gpt-4.1-mini",
+        "messages": [
+          {
+            "role": "system",
+            "content": "Select the best meme template from the provided list. Return STRICT JSON: { \"id\": \"<template_id>\" } only."
+          },
+          {
+            "role": "user",
+            "content": "Company context: {{$prev(2).json[\"company_name\"] || $prev(3).json[\"body\"][\"company_name\"]}}, Templates: {{$json[\"data\"] | stringify}}"
+          }
+        ]
+      },
+      "id": "4",
+      "name": "Pick Best Meme (OpenAI)",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [1050, 200],
+      "credentials": {
+        "openAiApi": "OpenAI Account"
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://meme-generator-and-template-database.p.rapidapi.com/template/{{$json[\"id\"]}}",
+        "method": "POST",
+        "sendBody": true,
+        "options": {},
+        "body": {
+          "topText": "={{$prev(2).json[\"top_text\"]}}",
+          "bottomText": "={{$prev(2).json[\"bottom_text\"]}}"
+        }
+      },
+      "id": "5",
+      "name": "Generate Meme Image",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [1300, 200],
+      "credentials": {
+        "httpHeaderAuth": "RapidAPI Key"
+      }
+    },
+    {
+      "parameters": {
+        "operation": "upload",
+        "binaryData": true,
+        "fileName": "={{$prev(2).json[\"template\"] || \"meme\"}}_day-{{$prev(4).json[\"body\"][\"day\"]}}.jpg",
+        "options": {}
+      },
+      "id": "6",
+      "name": "Save to Google Drive",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 1,
+      "position": [1550, 100],
+      "credentials": {
+        "googleDriveOAuth2Api": "Google Drive account"
+      }
+    },
+    {
+      "parameters": {
+        "sheetId": "YOUR_GOOGLE_SHEET_ID",
+        "range": "Sheet1!A:F",
+        "options": {},
+        "values": "={{[$prev(4).json[\"body\"][\"day\"], $prev(2).json[\"top_text\"], $prev(2).json[\"bottom_text\"], $prev(2).json[\"template\"], $json[\"id\"], $json[\"webViewLink\"]]}}"
+      },
+      "id": "7",
+      "name": "Update Google Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 1,
+      "position": [1550, 300],
+      "credentials": {
+        "googleSheetsOAuth2Api": "Google Sheets account"
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://your-project-name.vercel.app/api/make-video",
+        "method": "POST",
+        "sendBody": true,
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        },
+        "body": {
+          "imageUrl": "={{$json[\"imageUrl\"]}}",
+          "audioUrl": "={{$prev(2).json[\"music_url\"]}}",
+          "duration": 8,
+          "companyName": "={{$prev(4).json[\"body\"][\"company_name\"]}}",
+          "day": "={{$prev(4).json[\"body\"][\"day\"]}}"
+        }
+      },
+      "id": "8",
+      "name": "Generate Video (Vercel FFmpeg)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [1800, 200]
+    },
+    {
+      "parameters": {
+        "operation": "upload",
+        "videoTitle": "={{$prev(4).json[\"body\"][\"company_name\"]}} Meme Automation - Day {{$prev(4).json[\"body\"][\"day\"]}}",
+        "videoCategory": "Entertainment",
+        "videoPrivacy": "public",
+        "videoFile": "={{$binary.data}}"
+      },
+      "id": "9",
+      "name": "Upload to YouTube",
+      "type": "n8n-nodes-base.youtube",
+      "typeVersion": 1,
+      "position": [2050, 200],
+      "credentials": {
+        "youtubeOAuth2Api": "YouTube account"
+      }
+    }
+  ],
+  "connections": {
+    "Form Trigger": {
+      "main": [
+        [
+          {
+            "node": "Generate Meme Ideas (OpenAI)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Meme Ideas (OpenAI)": {
+      "main": [
+        [
+          {
+            "node": "Parse JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse JSON": {
+      "main": [
+        [
+          {
+            "node": "Meme Template Search",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Meme Template Search": {
+      "main": [
+        [
+          {
+            "node": "Pick Best Meme (OpenAI)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pick Best Meme (OpenAI)": {
+      "main": [
+        [
+          {
+            "node": "Generate Meme Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Meme Image": {
+      "main": [
+        [
+          {
+            "node": "Save to Google Drive",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Update Google Sheets",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Generate Video (Vercel FFmpeg)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Video (Vercel FFmpeg)": {
+      "main": [
+        [
+          {
+            "node": "Upload to YouTube",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

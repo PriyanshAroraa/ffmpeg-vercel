@@ -1,0 +1,22 @@
+{
+  "name": "ffmpeg-meme-video-api",
+  "version": "1.0.0",
+  "description": "Vercel serverless function for generating meme videos with FFmpeg",
+  "main": "api/make-video.js",
+  "scripts": {
+    "dev": "vercel dev",
+    "build": "echo 'No build step required'",
+    "deploy": "vercel --prod"
+  },
+  "dependencies": {
+    "fluent-ffmpeg": "^2.1.2",
+    "ffmpeg-static": "^5.2.0",
+    "axios": "^1.6.0"
+  },
+  "engines": {
+    "node": "18.x"
+  },
+  "keywords": ["ffmpeg", "video", "meme", "vercel", "serverless"],
+  "author": "Your Name",
+  "license": "MIT"
+}
